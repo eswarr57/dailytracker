@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Task Tracker Dashboard</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+
+  <div class="dashboard-container">
+
+    <header class="dashboard-header">
+      <h1>Daily Task Tracker</h1>
+
+      <div class="header-actions">
+        <button id="addTaskBtn">+ Add Task</button>
+        <button id="addDateBtn">+ Add Date</button>
+        <button onclick="window.location.href='./analytics.html'">
+          Analytics
+        </button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </header>
+
+    <div class="summary-bar">
+      <span id="totalTasks">Total Tasks: 0</span>
+      <span id="completedTasks">Completed: 0</span>
+      <span id="pendingTasks">Pending: 0</span>
+      <span id="completionPercent">Completion: 0%</span>
+    </div>
+
+    <div class="table-wrapper">
+      <table id="taskTable">
+        <thead>
+          <tr id="tableHeadRow">
+            <th class="sticky-col">Task Name</th>
+          </tr>
+        </thead>
+
+        <tbody id="taskTableBody">
+          <!-- dynamic rows -->
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <script src="./js/dashboard.js"></script>
+</body>
+</html>
