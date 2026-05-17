@@ -9,6 +9,9 @@ let tasks = [];
 let statuses = [];
 let dates = [];
 
+/*
+ LOAD SAVED DATES OR CREATE DEFAULT
+*/
 function generateDefaultDates() {
   const savedDates = localStorage.getItem("trackerDates");
 
@@ -28,16 +31,26 @@ function generateDefaultDates() {
   localStorage.setItem("trackerDates", JSON.stringify(dates));
 }
 
+/*
+ ENSURE TODAY EXISTS
+*/
 function ensureTodayExists() {
   const today = new Date().toISOString().split("T")[0];
 
   if (!dates.includes(today)) {
     dates.push(today);
     dates.sort();
-    localStorage.setItem("trackerDates", JSON.stringify(dates));
+
+    localStorage.setItem(
+      "trackerDates",
+      JSON.stringify(dates)
+    );
   }
 }
 
+/*
+ FETCH TASKS
+*/
 async function fetchTasks() {
   try {
     const res = await fetch(`${API_BASE}/tasks`, {
@@ -51,15 +64,19 @@ async function fetchTasks() {
     if (data.success) {
       tasks = data.tasks;
       statuses = data.statuses;
+
       renderTable();
       updateSummary();
     }
 
   } catch (error) {
-    console.error(error);
+    console.error("Fetch error:", error);
   }
 }
 
+/*
+ GET STATUS
+*/
 function getStatus(taskId, date) {
   const status = statuses.find(
     (s) =>
@@ -72,6 +89,9 @@ function getStatus(taskId, date) {
   return status.completed;
 }
 
+/*
+ RENDER TABLE
+*/
 function renderTable() {
   const headRow = document.getElementById("tableHeadRow");
   const tableBody = document.getElementById("taskTableBody");
@@ -92,8 +112,13 @@ function renderTable() {
       <td class="sticky-col task-name-cell">
         ${task.taskName}
         <span class="task-actions">
-          <button class="edit-btn" onclick="editTask('${task._id}')">Edit</button>
-          <button class="delete-btn" onclick="deleteTask('${task._id}')">Delete</button>
+          <button class="edit-btn" onclick="editTask('${task._id}')">
+            Edit
+          </button>
+
+          <button class="delete-btn" onclick="deleteTask('${task._id}')">
+            Delete
+          </button>
         </span>
       </td>
     `;
@@ -123,6 +148,9 @@ function renderTable() {
   });
 }
 
+/*
+ STATUS CYCLE
+*/
 async function cycleStatus(taskId, date) {
   const current = getStatus(taskId, date);
 
@@ -143,6 +171,9 @@ async function cycleStatus(taskId, date) {
   }
 }
 
+/*
+ SAVE STATUS
+*/
 async function saveStatus(taskId, date, completed) {
   try {
     await fetch(`${API_BASE}/tasks/status/${taskId}`, {
@@ -160,10 +191,13 @@ async function saveStatus(taskId, date, completed) {
     fetchTasks();
 
   } catch (error) {
-    console.error(error);
+    console.error("Save status error:", error);
   }
 }
 
+/*
+ DELETE STATUS
+*/
 async function deleteStatus(taskId, date) {
   try {
     await fetch(`${API_BASE}/tasks/status/${taskId}`, {
@@ -172,69 +206,110 @@ async function deleteStatus(taskId, date) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ date })
+      body: JSON.stringify({
+        date
+      })
     });
 
     fetchTasks();
 
   } catch (error) {
-    console.error(error);
+    console.error("Delete status error:", error);
   }
 }
 
+/*
+ ADD TASK
+*/
 async function addTask() {
   const taskName = prompt("Enter task name:");
 
-  if (!taskName) return;
+  if (!taskName || taskName.trim() === "") return;
 
-  const res = await fetch(`${API_BASE}/tasks`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ taskName })
-  });
+  try {
+    const res = await fetch(`${API_BASE}/tasks`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        taskName
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (data.success) fetchTasks();
+    if (data.success) {
+      fetchTasks();
+    }
+
+  } catch (error) {
+    console.error("Add task error:", error);
+  }
 }
 
+/*
+ EDIT TASK
+*/
 async function editTask(taskId) {
   const taskName = prompt("Enter updated task name:");
 
-  if (!taskName) return;
+  if (!taskName || taskName.trim() === "") return;
 
-  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`
-    },
-    body: JSON.stringify({ taskName })
-  });
+  try {
+    const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        taskName
+      })
+    });
 
-  const data = await res.json();
+    const data = await res.json();
 
-  if (data.success) fetchTasks();
-}
-
-async function deleteTask(taskId) {
-  if (!confirm("Delete task?")) return;
-
-  const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${token}`
+    if (data.success) {
+      fetchTasks();
     }
-  });
 
-  const data = await res.json();
-
-  if (data.success) fetchTasks();
+  } catch (error) {
+    console.error("Edit task error:", error);
+  }
 }
 
+/*
+ DELETE TASK
+*/
+async function deleteTask(taskId) {
+  const confirmDelete = confirm("Delete this task?");
+
+  if (!confirmDelete) return;
+
+  try {
+    const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      fetchTasks();
+    }
+
+  } catch (error) {
+    console.error("Delete task error:", error);
+  }
+}
+
+/*
+ ADD DATE
+*/
 function addDate() {
   const dateInput = prompt("Enter date (YYYY-MM-DD)");
 
@@ -243,41 +318,76 @@ function addDate() {
   if (!dates.includes(dateInput)) {
     dates.push(dateInput);
     dates.sort();
-    localStorage.setItem("trackerDates", JSON.stringify(dates));
+
+    localStorage.setItem(
+      "trackerDates",
+      JSON.stringify(dates)
+    );
+
     renderTable();
+    updateSummary();
   }
 }
 
+/*
+ TODAY SUMMARY
+*/
 function updateSummary() {
+  const today = new Date().toISOString().split("T")[0];
+
   const totalTasks = tasks.length;
 
-  const completedCount = statuses.filter(
+  const todayStatuses = statuses.filter(
+    (s) => s.date === today
+  );
+
+  const completedCount = todayStatuses.filter(
     (s) => s.completed === true
   ).length;
 
-  const failedCount = statuses.filter(
+  const failedCount = todayStatuses.filter(
     (s) => s.completed === false
   ).length;
+
+  const pendingCount =
+    totalTasks - completedCount - failedCount;
+
+  const completion =
+    totalTasks > 0
+      ? Math.round((completedCount / totalTasks) * 100)
+      : 0;
 
   document.getElementById("totalTasks").textContent =
     `Total Tasks: ${totalTasks}`;
 
   document.getElementById("completedTasks").textContent =
-    `Completed: ${completedCount}`;
+    `Completed Today: ${completedCount}`;
 
   document.getElementById("pendingTasks").textContent =
-    `Not Done: ${failedCount}`;
+    `Not Done Today: ${failedCount}`;
+
+  document.getElementById("completionPercent").textContent =
+    `Pending Today: ${pendingCount} | Completion: ${completion}%`;
 }
 
+/*
+ LOGOUT
+*/
 function logout() {
   localStorage.removeItem("token");
   window.location.href = "./login.html";
 }
 
+/*
+ EVENTS
+*/
 document.getElementById("addTaskBtn").addEventListener("click", addTask);
 document.getElementById("addDateBtn").addEventListener("click", addDate);
 document.getElementById("logoutBtn").addEventListener("click", logout);
 
+/*
+ INIT
+*/
 generateDefaultDates();
 ensureTodayExists();
 fetchTasks();
