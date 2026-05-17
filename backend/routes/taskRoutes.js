@@ -40,6 +40,7 @@ router.put("/:taskId", updateTask);
   DELETE /api/tasks/:taskId
 */
 router.delete("/:taskId", deleteTask);
+router.delete("/status/:taskId", deleteTaskStatus);
 
 /*
   TOGGLE CHECKBOX

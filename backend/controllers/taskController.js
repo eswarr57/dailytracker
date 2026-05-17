@@ -232,12 +232,34 @@ const getTaskStatusByDate = async (req, res) => {
     });
   }
 };
+const deleteTaskStatus = async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { date } = req.body;
+    const userId = req.user.userId;
 
+    await TaskStatus.findOneAndDelete({
+      taskId,
+      date,
+      userId
+    });
+
+    res.json({
+      success: true
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false
+    });
+  }
+};
 module.exports = {
   createTask,
   getAllTasks,
   updateTask,
   deleteTask,
   toggleTaskStatus,
-  getTaskStatusByDate
+  getTaskStatusByDate,
+  deleteTaskStatus
 };
