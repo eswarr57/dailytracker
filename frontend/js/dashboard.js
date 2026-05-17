@@ -92,12 +92,8 @@ function renderTable() {
       <td class="sticky-col task-name-cell">
         ${task.taskName}
         <span class="task-actions">
-          <button class="edit-btn" onclick="editTask('${task._id}')">
-            Edit
-          </button>
-          <button class="delete-btn" onclick="deleteTask('${task._id}')">
-            Delete
-          </button>
+          <button class="edit-btn" onclick="editTask('${task._id}')">Edit</button>
+          <button class="delete-btn" onclick="deleteTask('${task._id}')">Delete</button>
         </span>
       </td>
     `;
@@ -105,7 +101,8 @@ function renderTable() {
     dates.forEach((date) => {
       const status = getStatus(task._id, date);
 
-      let symbol = "";
+      let symbol = "⬜";
+
       if (status === true) symbol = "✅";
       if (status === false) symbol = "❌";
 
@@ -270,9 +267,6 @@ function updateSummary() {
 
   document.getElementById("pendingTasks").textContent =
     `Not Done: ${failedCount}`;
-
-  document.getElementById("completionPercent").textContent =
-    "";
 }
 
 function logout() {
