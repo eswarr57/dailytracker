@@ -9,49 +9,32 @@ const {
   updateTask,
   deleteTask,
   toggleTaskStatus,
-  getTaskStatusByDate
+  getTaskStatusByDate,
+  deleteTaskStatus
 } = require("../controllers/taskController");
 
 /*
-  All task routes are protected
+ PROTECT ALL ROUTES
 */
 router.use(authMiddleware);
 
 /*
-  CREATE TASK
-  POST /api/tasks
+ TASK ROUTES
 */
 router.post("/", createTask);
-
-/*
-  GET ALL TASKS + ALL STATUSES
-  GET /api/tasks
-*/
 router.get("/", getAllTasks);
 
 /*
-  UPDATE TASK NAME
-  PUT /api/tasks/:taskId
-*/
-router.put("/:taskId", updateTask);
-
-/*
-  DELETE TASK
-  DELETE /api/tasks/:taskId
-*/
-router.delete("/:taskId", deleteTask);
-router.delete("/status/:taskId", deleteTaskStatus);
-
-/*
-  TOGGLE CHECKBOX
-  PUT /api/tasks/status/:taskId
+ STATUS ROUTES
 */
 router.put("/status/:taskId", toggleTaskStatus);
+router.delete("/status/:taskId", deleteTaskStatus);
+router.get("/status/:date", getTaskStatusByDate);
 
 /*
-  GET STATUSES BY DATE
-  GET /api/tasks/status/:date
+ TASK CRUD
 */
-router.get("/status/:date", getTaskStatusByDate);
+router.put("/:taskId", updateTask);
+router.delete("/:taskId", deleteTask);
 
 module.exports = router;
