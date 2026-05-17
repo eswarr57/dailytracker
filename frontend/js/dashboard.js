@@ -10,9 +10,16 @@ let statuses = [];
 let dates = [];
 
 /*
- DEFAULT DATES
+ LOAD SAVED DATES OR CREATE DEFAULT
 */
 function generateDefaultDates() {
+  const savedDates = localStorage.getItem("trackerDates");
+
+  if (savedDates) {
+    dates = JSON.parse(savedDates);
+    return;
+  }
+
   const today = new Date();
 
   for (let i = 0; i < 7; i++) {
@@ -20,6 +27,25 @@ function generateDefaultDates() {
     d.setDate(today.getDate() + i);
 
     dates.push(d.toISOString().split("T")[0]);
+  }
+
+  localStorage.setItem("trackerDates", JSON.stringify(dates));
+}
+
+/*
+ ENSURE TODAY EXISTS
+*/
+function ensureTodayExists() {
+  const today = new Date().toISOString().split("T")[0];
+
+  if (!dates.includes(today)) {
+    dates.push(today);
+    dates.sort();
+
+    localStorage.setItem(
+      "trackerDates",
+      JSON.stringify(dates)
+    );
   }
 }
 
@@ -43,18 +69,19 @@ async function fetchTasks() {
       renderTable();
       updateSummary();
     }
+
   } catch (error) {
-    console.error(error);
+    console.error("Fetch error:", error);
   }
 }
 
 /*
- CHECK STATUS
+ CHECK TASK STATUS
 */
 function isCompleted(taskId, date) {
   return statuses.some(
     (status) =>
-      status.taskId === taskId &&
+      String(status.taskId) === String(taskId) &&
       status.date === date &&
       status.completed
   );
@@ -70,6 +97,8 @@ function renderTable() {
   headRow.innerHTML = `<th class="sticky-col">Task Name</th>`;
   tableBody.innerHTML = "";
 
+  dates.sort();
+
   dates.forEach((date) => {
     headRow.innerHTML += `<th>${date}</th>`;
   });
@@ -84,6 +113,7 @@ function renderTable() {
           <button class="edit-btn" onclick="editTask('${task._id}')">
             Edit
           </button>
+
           <button class="delete-btn" onclick="deleteTask('${task._id}')">
             Delete
           </button>
@@ -92,15 +122,17 @@ function renderTable() {
     `;
 
     dates.forEach((date) => {
-      const checked = isCompleted(task._id, date) ? "checked" : "";
+      const completed = isCompleted(task._id, date);
+      const symbol = completed ? "✅" : "❌";
 
       rowHTML += `
         <td>
-          <input
-            type="checkbox"
-            ${checked}
-            onchange="toggleStatus('${task._id}', '${date}', this.checked)"
-          />
+          <span
+            class="status-icon"
+            onclick="toggleStatus('${task._id}', '${date}', ${!completed})"
+          >
+            ${symbol}
+          </span>
         </td>
       `;
     });
@@ -116,7 +148,7 @@ function renderTable() {
 async function addTask() {
   const taskName = prompt("Enter task name:");
 
-  if (!taskName) return;
+  if (!taskName || taskName.trim() === "") return;
 
   try {
     const res = await fetch(`${API_BASE}/tasks`, {
@@ -125,7 +157,9 @@ async function addTask() {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ taskName })
+      body: JSON.stringify({
+        taskName
+      })
     });
 
     const data = await res.json();
@@ -133,8 +167,9 @@ async function addTask() {
     if (data.success) {
       fetchTasks();
     }
+
   } catch (error) {
-    console.error(error);
+    console.error("Add task error:", error);
   }
 }
 
@@ -144,7 +179,7 @@ async function addTask() {
 async function editTask(taskId) {
   const taskName = prompt("Enter updated task name:");
 
-  if (!taskName) return;
+  if (!taskName || taskName.trim() === "") return;
 
   try {
     const res = await fetch(`${API_BASE}/tasks/${taskId}`, {
@@ -153,7 +188,9 @@ async function editTask(taskId) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
       },
-      body: JSON.stringify({ taskName })
+      body: JSON.stringify({
+        taskName
+      })
     });
 
     const data = await res.json();
@@ -161,8 +198,9 @@ async function editTask(taskId) {
     if (data.success) {
       fetchTasks();
     }
+
   } catch (error) {
-    console.error(error);
+    console.error("Edit task error:", error);
   }
 }
 
@@ -187,8 +225,9 @@ async function deleteTask(taskId) {
     if (data.success) {
       fetchTasks();
     }
+
   } catch (error) {
-    console.error(error);
+    console.error("Delete task error:", error);
   }
 }
 
@@ -214,8 +253,9 @@ async function toggleStatus(taskId, date, completed) {
     if (data.success) {
       fetchTasks();
     }
+
   } catch (error) {
-    console.error(error);
+    console.error("Toggle status error:", error);
   }
 }
 
@@ -229,31 +269,34 @@ function addDate() {
 
   if (!dates.includes(dateInput)) {
     dates.push(dateInput);
+    dates.sort();
+
+    localStorage.setItem(
+      "trackerDates",
+      JSON.stringify(dates)
+    );
+
     renderTable();
     updateSummary();
   }
 }
 
 /*
- SUMMARY
+ UPDATE SUMMARY
 */
 function updateSummary() {
   const totalTasks = tasks.length;
-  let completedCount = 0;
+  const totalPossibleChecks = totalTasks * dates.length;
 
-  statuses.forEach((status) => {
-    if (status.completed) {
-      completedCount++;
-    }
-  });
+  const completedCount = statuses.filter(
+    (status) => status.completed
+  ).length;
 
-  const pendingCount = totalTasks > completedCount
-    ? totalTasks - completedCount
-    : 0;
+  const pendingCount = totalPossibleChecks - completedCount;
 
   const percentage =
-    totalTasks > 0
-      ? Math.round((completedCount / (totalTasks * dates.length)) * 100)
+    totalPossibleChecks > 0
+      ? Math.round((completedCount / totalPossibleChecks) * 100)
       : 0;
 
   document.getElementById("totalTasks").textContent =
@@ -288,4 +331,5 @@ document.getElementById("logoutBtn").addEventListener("click", logout);
  INIT
 */
 generateDefaultDates();
+ensureTodayExists();
 fetchTasks();

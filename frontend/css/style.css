@@ -214,3 +214,14 @@ input[type="checkbox"] {
   text-align: center;
   color: #2563eb;
 }
+
+.status-icon {
+  font-size: 24px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.status-icon:hover {
+  transform: scale(1.2);
+}
